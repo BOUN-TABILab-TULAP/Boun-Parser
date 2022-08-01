@@ -6,67 +6,40 @@ BOUN-Pars creates dependency parse trees of Turkish sentences in CoNLL-U format.
 
 The pre-processing steps of parsing from raw text: the segmentation, morphological tagging, and lemmatization tasks are performed by a pre-trained model by [TurkuNLP pipeline](https://turkunlp.org/Turku-neural-parser-pipeline/).
 
-# Installation
-
-* This program requires Turku-neural-parser-pipeline. Run the following commands
+## How to run using Docker
+1. Clone the repo
+```bash
+git clone https://github.com/BOUN-TABILab-TULAP/Boun-Parser.git
 ```
-git clone --depth 1 https://github.com/tabilab-dip/Turku-neural-parser-pipeline-BPARS.git
-cd Turku-neural-parser-pipeline-BPARS
-git submodule update --init --recursive
-python3.7 -m venv venv-parser-neural
-source venv-parser-neural/bin/activate
-sudo apt-get install python3.7-dev
-pip3 install wheel
-pip3 install -r requirements-cpu.txt
-wget http://tabilab.cmpe.boun.edu.tr/BOUN-PARS/model_tr_imst_ruled_morphed_pipeline.tgz
-tar -xvf model_tr_imst_ruled_morphed_pipeline.tgz
-git clone --depth=1 --branch=master https://github.com/tabilab-dip/BOUN-PARS.git bpars
-rm -rf ./bpars/.git
-mv bpars/* .
-rm -rf ./bpars
+2. Launch a terminal in the root directory of the repo and build the Docker image where
+- `-t` is the tag for the Docker image. You can provide any name you want
+- `.` is the relative path to the Dockerfile 
+```bash
+docker build -t boun-parser .
 ```
-
-* Parser only runs in verbose mode. Need to make it switchable when deploying. (TODO)
-
-## Run as a server
-
-* Here are the commands to run the flask server:
-    * Loading of the modules might take a few minutes. The server won't answer by that time
+3. Run the Docker image where
+- `-d` indicates "detach", let the container run in the background
+- `-p 5000:5000` indicates mapping port 5000 of the container to the port 5000 of the host.
+```bash
+docker run -d -p 5000:5000 boun-parser
 ```
-python api.py 5001 # or any other port
+4. Send a POST request
+- via curl
+    ```bash
+    curl -X POST http://localhost:5000/evaluate 
+   -H 'Content-Type: application/json' 
+   -d '{"textarea":"Her istediğini yerine getiriyordum."}'
 
-in another terminal:
-    curl -X POST -H "Content-Type: application/json" -d '{"textarea": "bu örnek bir cümledir."}' http://127.0.0.1:5001/evaluate
+   > {"brat_conll": "# newdoc\n# newpar\n# sent_id = 1\n# text = Her istedi\u011fini yerine getiriyordum.\n1\tHer\ther\tDET\tDet\t_\t2\tdet\t_\t_\n2\tistedi\u011fini\tiste\tVERB\tVerb\tAspect=Perf|Case=Acc|Mood=Ind|Number[psor]=Sing|Person[psor]=3|Polarity=Pos|Tense=Past|VerbForm=Part\t3\tobj\t_\t_\n3\tyerine\tyer\tNOUN\tNoun\tCase=Dat|Number=Sing|Number[psor]=Sing|Person=3|Person[psor]=3\t0\troot\t_\t_\n4\tgetiriyordum\tgetir\tVERB\tVerb\tAspect=Prog|Mood=Ind|Number=Sing|Person=1|Polarity=Pos|Polite=Infm|Tense=Past\t3\tcompound\t_\tSpaceAfter=No\n5\t.\t.\tPUNCT\tPunc\t_\t3\tpunct\t_\tSpacesAfter=\\n\n\n\n\n"}
+    ```
+- via Python's requests library
+    ```python
+    import requests
+    res = requests.post('http://localhost:5000/evaluate', json={'textarea':'Her istediğini yerine getiriyordum.'})
+    print(res.json())
 
-```
-
-
-## Python evaluate
-
-* Example python use of trained model
-```python
-import evaluate
-# wait a few minutes, modules take some time to init
-result = evaluate.parse_plaintext("bu örnek bir cümledir.")
-print(result)
-
-# ...
-```
-
-* Initial import takes some time, consequent parsings don't.
-
-## Parse CoNLL-U File
-
-
-```python
-import evaluate
-# wait a few minutes, modules take some time to init
-with open("some_conllu_file.conllu", "r") as f:
-    conllu_text = f.read()
-result = evaluate.parse_conllu(conllu_text)
-print(result)
-```
-
+    > {"brat_conll": "# newdoc\n# newpar\n# sent_id = 1\n# text = Her istedi\u011fini yerine getiriyordum.\n1\tHer\ther\tDET\tDet\t_\t2\tdet\t_\t_\n2\tistedi\u011fini\tiste\tVERB\tVerb\tAspect=Perf|Case=Acc|Mood=Ind|Number[psor]=Sing|Person[psor]=3|Polarity=Pos|Tense=Past|VerbForm=Part\t3\tobj\t_\t_\n3\tyerine\tyer\tNOUN\tNoun\tCase=Dat|Number=Sing|Number[psor]=Sing|Person=3|Person[psor]=3\t0\troot\t_\t_\n4\tgetiriyordum\tgetir\tVERB\tVerb\tAspect=Prog|Mood=Ind|Number=Sing|Person=1|Polarity=Pos|Polite=Infm|Tense=Past\t3\tcompound\t_\tSpaceAfter=No\n5\t.\t.\tPUNCT\tPunc\t_\t3\tpunct\t_\tSpacesAfter=\\n\n\n\n\n"}
+    ```
 
 BOUN-Pars is developed by Şaziye Betül Özateş, Arzucan Özgür, Tunga Güngör from the Department of Computer Engineering, and Balkız Öztürk from the Department of Linguistics, at Bogazici University. 
 
