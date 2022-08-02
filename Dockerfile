@@ -21,9 +21,9 @@ RUN git clone --depth=1 --branch=master https://github.com/tabilab-dip/BOUN-PARS
 RUN rm -rf ./bpars/.git
 RUN mv bpars/* .
 RUN rm -rf ./bpars
-EXPOSE 5000
 
-# CMD tail -f /dev/null
+RUN pip3 install protobuf==3.20.0
+EXPOSE 5000
 
 
 ENTRYPOINT [ "python" ]
